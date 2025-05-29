@@ -8,7 +8,6 @@ __pycache__/
 *$py.class
 *.so
 .Python
-env/
 build/
 develop-eggs/
 dist/
@@ -26,7 +25,6 @@ wheels/
 *.egg
 
 # Environment
-.env
 .venv
 venv/
 ENV/
@@ -46,11 +44,6 @@ ENV/
 ehthumbs.db
 Thumbs.db
 
-# Docker
-Dockerfile
-docker-compose.yml
-.dockerignore
-
-# Logs
+# Local development
+.env.local
 *.log
-logs/ 

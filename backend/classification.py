@@ -12,6 +12,12 @@ total_uploads = collection.count_documents({"file_name": {"$exists":True}})
 raw_json = collection.find_one({"uid": total_uploads},{"extracted_details":1, "_id": 0 })
 raw_json_string = json.dumps(raw_json)
 
+extracted_file_from = collection.find_one(
+    filter={},  # No filter, get all documents
+    sort=[("uid", -1)],  # Sort by _id in descending order
+    projection={"file_name": 1, "_id": 0}  # Only get file_name field
+)
+
 def get_gemini_model():
     return ChatGoogleGenerativeAI(model="gemini-1.5-flash-latest")
 
@@ -57,12 +63,6 @@ Respond with only one of the labels: ap_invoice or ap_invoice_with_lc.
 # )
 
 
-extracted_file_from = collection.find_one(
-    filter={},  # No filter, get all documents
-    sort=[("uid", -1)],  # Sort by _id in descending order
-    projection={"file_name": 1, "_id": 0}  # Only get extracted_details field
-)
-
 # print("Latest document extracted details:")
 # print(json.dumps(raw_json_string, indent=2))
 
@@ -75,6 +75,9 @@ extracted_file_from = collection.find_one(
 ####################
 ## FROM THE COLAB ##
 ####################
+# Initialize with a default value
+invoice_data_dict = {}
+
 # Find the start and end of the JSON object
 json_start = raw_json_string.find('{')
 json_end = raw_json_string.rfind('}')
@@ -87,17 +90,21 @@ if json_start != -1 and json_end != -1:
     try:
         invoice_data_dict = json.loads(json_substring)
         print("JSON parsed successfully!")
-
-
     except json.JSONDecodeError as e:
         print(f"Error decoding JSON: {e}")
+        invoice_data_dict = {}  # Ensure it's always defined
 else:
     print("Could not find a valid JSON object in the string.")
+    invoice_data_dict = {}  # Ensure it's always defined
 
 model = get_gemini_model()
 
+# Only proceed if we have valid data
+if invoice_data_dict:
+    classification_result = classify_invoice(invoice_data_dict, model)
+    print("📄 Document Type:", classification_result)
+else:
+    print("❌ No valid invoice data to classify")
 
-classification_result = classify_invoice(invoice_data_dict, model)
-
-print("📄 Document Type:", classification_result)
-print(type(raw_json))
+# Export the variables that main.py is trying to import
+__all__ = ['get_gemini_model', 'classify_invoice', 'extracted_file_from', 'invoice_data_dict']
